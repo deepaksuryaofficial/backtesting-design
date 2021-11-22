@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    
+</head>
+<body>
+    <!-- As a heading -->
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">Backtesting Design</span>
+    </div>
+
+    
+  </nav>
+
+    <div class="container" style="margin-top: 30px;">
+        <label for="sector">Choose sector:</label>
+        <select name="sector" id="sector" onchange="myFunctionSector()">
+            {% for item in sectors%}
+          <option value="{{item}}">{{item}}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="week">Choose Week:</label>
+        <select name="week" id="week" onchange="myFunction()" >
+            {% for item in weeks%}
+          <option value="{{item}}">{{item}}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="code">Choose Code:</label>
+        <select name="code" id="code" onclick="onclickfunc()">
+            {% for item in codes%}
+            <option value="{{item}}">{{item}}</option>
+              {% endfor %}
+        </select>
+        
+        <button type="button" class="btn btn-dark" style="margin-left: 20px ;" onclick="submitFilterFunc()"> Filter and Search</button>
+    
+    
+        <p id="demo"></p>
+    </div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div id="chartContainer1" style="height: 270px; width: 500px; margin: 30px;"></div>
+                <div id="chartContainer2" style="height: 270px; width: 500px; margin: 30px;"></div>
+                
+            </div>
+            <div class="col">
+                <div id="chartContainer3" style="height: 270px; width: 500px; margin: 30px;"></div>
+                <div id="chartContainer4" style="height: 270px; width: 500px; margin: 30px;"></div>
+            </div>
+
+            
+        </div>
+      
+    </div>
+   
+    <script>
+        var weeks= {{weeks|safe}}
+        var codes= {{codes|safe}}
+        var sectors= {{sectors|safe}}
+
+        var week_value= "all"
+        var code_value= "all"
+        var sector_value = "all"
+
+        var sectors_all={{sectors_all|safe}}
+        var start_dates_all ={{start_dates_all|safe}}
+        var end_dates_all ={{end_dates_all|safe}}
+        var codes_all ={{codes_all|safe}}
+
+        var Week1_ROI_list={{Week1_ROI_list|safe}}
+        var Week2_ROI_list ={{Week2_ROI_list|safe}}
+        var Week4_ROI_list ={{Week4_ROI_list|safe}}
+        var Week8_ROI_list ={{Week8_ROI_list|safe}}
+        var Week12_ROI_list ={{Week12_ROI_list|safe}}
+        var Week24_ROI_list ={{Week24_ROI_list|safe}}
+
+        var Week1_ROI_percent_list={{Week1_ROI_percent_list|safe}}
+        var Week2_ROI_percent_list={{Week2_ROI_percent_list|safe}}
+        var Week4_ROI_percent_list={{Week4_ROI_percent_list|safe}}
+        var Week8_ROI_percent_list={{Week8_ROI_percent_list|safe}}
+        var Week12_ROI_percent_list={{Week12_ROI_percent_list|safe}}
+        var Week24_ROI_percent_list={{Week24_ROI_percent_list|safe}}
+
+        var Week1PandL_list= {{Week1PandL_list|safe}}
+        var Week2PandL_list= {{Week2PandL_list|safe}}
+        var Week4PandL_list= {{Week4PandL_list|safe}}
+        var Week8PandL_list= {{Week8PandL_list|safe}}
+        var Week12PandL_list= {{Week12PandL_list|safe}}
+        var Week24PandL_list= {{Week24PandL_list|safe}}
+
+        
+        var Week1_ROI=0, Week2_ROI=0, Week4_ROI=0, Week8_ROI=0, Week12_ROI=0, Week24_ROI =0;
+        var Week1__ROI_win_count=0, Week2__ROI_win_count=0, Week4__ROI_win_count=0, Week8__ROI_win_count=0, Week12__ROI_win_count=0, Week24__ROI_win_count =0;
+        var Week1__ROI_loss_count=0, Week2__ROI_loss_count=0, Week4__ROI_loss_count=0, Week8__ROI_loss_count=0, Week12__ROI_loss_count=0, Week24__ROI_loss_count =0;
+        var Week1_ROI_percent=0, Week2_ROI_percent=0, Week4_ROI_percent=0, Week8_ROI_percent=0, Week12_ROI_percent=0, Week24_ROI_percent =0;
+        var Week1__ROI_win_value=0, Week2__ROI_win_value=0, Week4__ROI_win_value=0, Week8__ROI_win_value=0, Week12__ROI_win_value=0, Week24__ROI_win_value =0;
+        var Week1__ROI_loss_value=0, Week2__ROI_loss_value=0, Week4__ROI_loss_value=0, Week8__ROI_loss_value=0, Week12__ROI_loss_value=0, Week24__ROI_loss_value =0;
+
+        var filteredIndicesGlobal= []
+
+
+        function myFunctionSector(){
+            var sector_value= document.getElementById("sector").value;
+            var week_value= document.getElementById("week").value;
+            weeksArray=[]
+            codesArray=["all"]
+            
+
+            dropdownLengthWeeksBefore= document.getElementById("week").options.length;
+            console.log("calling sector func ", sector_value,dropdownLengthWeeksBefore)
+            console.log(sectors_all)
+
+            if(sector_value!="all"){
+                for(i=0;i<sectors_all.length;i++){
+                if(i==0){
+                    weeksArray.push("all")
+                }
+
+                //console.log(sector_value, sectors_all[i])
+                if(sectors_all[i]==sector_value){
+                    
+                    if(weeksArray.indexOf(start_dates_all[i]+" to "+ end_dates_all[i])===-1){
+                        weeksArray.push(start_dates_all[i]+" to "+ end_dates_all[i]);
+                    }
+                }
+            }
+            
+
+                    for(i = dropdownLengthWeeksBefore-1; i >= 0; i--) {
+                        document.getElementById("week").options.remove(i);                        
+                    }
+
+                    //set weeks to options value in code dropdown
+
+                    for(i=0; i<weeksArray.length;i++){
+                        var weekList = document.getElementById("week");
+                        var option = document.createElement("option");
+                        option.text = weeksArray[i];
+                        weekList.add(option);
+                    }
+
+            dropdownLengthWeeksAfter= document.getElementById("week").options.length;
+            console.log("calling sector func ", sector_value,dropdownLengthWeeksAfter)
+            console.log(weeksArray)
+
+            if(week_value=="all"){
+                    // create codes array
+                    for(i=0;i<sectors_all.length;i++){
+                        if(sectors_all[i]==sector_value){
+                            if (codesArray.indexOf(codes_all[i])===-1){
+                                codesArray.push(codes_all[i])
+
+                            }
+                            
+                        }
+                    }
+                    //delete the exis items in code  dropdown
+                    dropdownLength=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLength)
+                    
+
+                    for(i = dropdownLength-1; i >= 0; i--) {
+                        document.getElementById("code").options.remove(i);                        
+                    }
+                    
+                    //update codes array items to dropdown options code  
+                    for(i=0; i<codesArray.length;i++){
+                        var codeList = document.getElementById("code");
+                        var option = document.createElement("option");
+                        option.text = codesArray[i];
+                        codeList.add(option);
+                    }
+                    
+
+                    dropdownLengthnew=document.getElementById("code").options.length;
+                    console.log("dropdownLength New Codes:",dropdownLengthnew, "SECTOR: ", sector_value)
+            }
+                }else{
+
+                    //delete items in weeks and code
+                    dropdownLength=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLength)
+
+                    for(i = dropdownLength-1; i >= 0; i--) {
+                        document.getElementById("code").options.remove(i);                        
+                    }
+
+                    dropdownLength=document.getElementById("week").options.length;
+                    console.log("dropdownLength Weeks:",dropdownLength)
+
+                    for(i = dropdownLength-1; i >= 0; i--) {
+                        document.getElementById("week").options.remove(i);                        
+                    }
+                    
+                    // update week and code list fom weeks and codes repectivley
+                    for(i=0;i<codes.length;i++){
+                        var codeList = document.getElementById("code");
+                        var option = document.createElement("option");
+                        option.text = codes[i];
+                        codeList.add(option);
+                    }
+
+                    for(i=0;i<weeks.length;i++){
+                        var weekList = document.getElementById("week");
+                        var option = document.createElement("option");
+                        option.text = weeks[i];
+                        weekList.add(option);
+                    }
+                }
+            }
+
+            
+
+
+
+    
+
+        function submitFilterFunc(){
+            var code_value= document.getElementById("code").value;
+            var sector_value= document.getElementById("sector").value;
+            var week_value= document.getElementById("week").value;
+            console.log("Submited values :", code_value, sector_value, week_value)
+
+            
+
+            if(sector_value=="all" && week_value=="all" && code_value=="all"){
+                for(i=0;i<sectors_all.length;i++){
+                    Week1_ROI+=(Week1_ROI_list[i]);
+                    Week2_ROI+=(Week2_ROI_list[i]);
+                    Week4_ROI+=(Week4_ROI_list[i]);
+                    Week8_ROI+=(Week8_ROI_list[i]);
+                    Week12_ROI+=(Week12_ROI_list[i]);
+                    Week24_ROI+=(Week24_ROI_list[i]);
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+                }
+
+                
+
+            }else if(sector_value=="all" && week_value=="all" && code_value!="all"){
+                console.log(code_value)
+                for(i=0;i<codes_all.length;i++){
+                    if(codes_all[i]==code_value){
+                    Week1_ROI+=(Week1_ROI_list[i])
+                    Week2_ROI+=(Week2_ROI_list[i])
+                    Week4_ROI+=(Week4_ROI_list[i])
+                    Week8_ROI+=(Week8_ROI_list[i])
+                    Week12_ROI+=(Week12_ROI_list[i])
+                    Week24_ROI+=(Week24_ROI_list[i])
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+
+                    }
+
+                }
+                console.log(Week1_ROI,Week2_ROI,Week4_ROI,Week8_ROI,Week12_ROI,Week24_ROI )
+
+            }else if(sector_value=="all" && week_value!="all" && code_value=="all"){
+                console.log(week_value)
+                for(i=0;i<codes_all.length;i++){
+                    if(start_dates_all[i]+" to "+ end_dates_all[i] ==week_value){
+                    Week1_ROI+=(Week1_ROI_list[i])
+                    Week2_ROI+=(Week2_ROI_list[i])
+                    Week4_ROI+=(Week4_ROI_list[i])
+                    Week8_ROI+=(Week8_ROI_list[i])
+                    Week12_ROI+=(Week12_ROI_list[i])
+                    Week24_ROI+=(Week24_ROI_list[i])
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+                    }
+
+                }
+                console.log(Week1_ROI,Week2_ROI,Week4_ROI,Week8_ROI,Week12_ROI,Week24_ROI )
+
+            }
+            else if(sector_value!="all" && week_value=="all" && code_value=="all"){
+                console.log(sector_value)
+                for(i=0;i<sectors_all.length;i++){
+                    if(sectors_all[i] ==sector_value){
+                    Week1_ROI+=(Week1_ROI_list[i])
+                    Week2_ROI+=(Week2_ROI_list[i])
+                    Week4_ROI+=(Week4_ROI_list[i])
+                    Week8_ROI+=(Week8_ROI_list[i])
+                    Week12_ROI+=(Week12_ROI_list[i])
+                    Week24_ROI+=(Week24_ROI_list[i])
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+                    }
+
+
+
+                }
+                console.log(Week1_ROI,Week2_ROI,Week4_ROI,Week8_ROI,Week12_ROI,Week24_ROI )
+
+            }
+            else if(sector_value!="all" && week_value!="all" && code_value=="all"){
+                console.log(sector_value,week_value)
+                for(i=0;i<sectors_all.length;i++){
+                    if(sectors_all[i] ==sector_value && start_dates_all[i]+" to "+ end_dates_all[i]==week_value){
+                    Week1_ROI+=(Week1_ROI_list[i])
+                    Week2_ROI+=(Week2_ROI_list[i])
+                    Week4_ROI+=(Week4_ROI_list[i])
+                    Week8_ROI+=(Week8_ROI_list[i])
+                    Week12_ROI+=(Week12_ROI_list[i])
+                    Week24_ROI+=(Week24_ROI_list[i])
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+                    }
+
+                }
+                console.log(Week1_ROI,Week2_ROI,Week4_ROI,Week8_ROI,Week12_ROI,Week24_ROI )
+
+            }
+            else if(sector_value=="all" && week_value!="all" && code_value!="all"){
+                console.log(week_value,code_value)
+                for(i=0;i<sectors_all.length;i++){
+                    if(codes_all[i] ==code_value && start_dates_all[i]+" to "+ end_dates_all[i]==week_value){
+                    Week1_ROI+=(Week1_ROI_list[i])
+                    Week2_ROI+=(Week2_ROI_list[i])
+                    Week4_ROI+=(Week4_ROI_list[i])
+                    Week8_ROI+=(Week8_ROI_list[i])
+                    Week12_ROI+=(Week12_ROI_list[i])
+                    Week24_ROI+=(Week24_ROI_list[i])
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+                    }
+                    
+
+                }
+                console.log(Week1_ROI,Week2_ROI,Week4_ROI,Week8_ROI,Week12_ROI,Week24_ROI )
+
+            }
+            else if(sector_value!="all" && week_value=="all" && code_value!="all"){
+                console.log(code_value,sector_value)
+                for(i=0;i<sectors_all.length;i++){
+                    if(codes_all[i] ==code_value && sectors_all[i]==sector_value){
+                    Week1_ROI+=(Week1_ROI_list[i])
+                    Week2_ROI+=(Week2_ROI_list[i])
+                    Week4_ROI+=(Week4_ROI_list[i])
+                    Week8_ROI+=(Week8_ROI_list[i])
+                    Week12_ROI+=(Week12_ROI_list[i])
+                    Week24_ROI+=(Week24_ROI_list[i])
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+                    }
+
+                }
+                console.log(Week1_ROI,Week2_ROI,Week4_ROI,Week8_ROI,Week12_ROI,Week24_ROI )
+
+            }
+            else if(sector_value!="all" && week_value!="all" && code_value!="all"){
+                console.log(week_value,code_value)
+                for(i=0;i<sectors_all.length;i++){
+
+                    if(codes_all[i] ==code_value && start_dates_all[i]+" to "+ end_dates_all[i]==week_value && sector_value==sectors_all[i]){
+                        console.log("hi")
+                    Week1_ROI+=(Week1_ROI_list[i])
+                    Week2_ROI+=(Week2_ROI_list[i])
+                    Week4_ROI+=(Week4_ROI_list[i])
+                    Week8_ROI+=(Week8_ROI_list[i])
+                    Week12_ROI+=(Week12_ROI_list[i])
+                    Week24_ROI+=(Week24_ROI_list[i])
+
+                    Week1_ROI_percent+=(Week1_ROI_percent_list[i])/100
+                    Week2_ROI_percent+=(Week2_ROI_percent_list[i])/100
+                    Week4_ROI_percent+=(Week4_ROI_percent_list[i])/100
+                    Week8_ROI_percent+=(Week8_ROI_percent_list[i])/100
+                    Week12_ROI_percent+=(Week12_ROI_percent_list[i])/100
+                    Week24_ROI_percent+=(Week24_ROI_percent_list[i])/100
+
+                    
+
+                    if(Week1PandL_list[i]>0){
+                        Week1__ROI_win_count+=1;
+                        Week1__ROI_win_value+=Week1PandL_list[i]
+                    } else if(Week1PandL_list[i]<0){
+                        Week1__ROI_loss_count+=1;
+                        Week1__ROI_loss_value+=Week1PandL_list[i]
+                    }
+
+                    if(Week2PandL_list[i]>0){
+                        Week2__ROI_win_count+=1;
+                        Week2__ROI_win_value+=Week2PandL_list[i]
+                    } else if(Week2PandL_list[i]<0){
+                        Week2__ROI_loss_count+=1;
+                        Week2__ROI_loss_value+=Week2PandL_list[i]
+                    }
+
+                    if(Week4PandL_list[i]>0){
+                        Week4__ROI_win_count+=1;
+                        Week4__ROI_win_value+=Week4PandL_list[i]
+                    } else if(Week4PandL_list[i]<0){
+                        Week4__ROI_loss_count+=1;
+                        Week4__ROI_loss_value+=Week4PandL_list[i]
+                    }
+
+                    if(Week8PandL_list[i]>0){
+                        Week8__ROI_win_count+=1;
+                        Week8__ROI_win_value+=Week8PandL_list[i]
+                    } else if(Week8PandL_list[i]<0){
+                        Week8__ROI_loss_count+=1;
+                        Week8__ROI_loss_value+=Week8PandL_list[i]
+                    }
+
+                    if(Week12PandL_list[i]>0){
+                        Week12__ROI_win_count+=1;
+                        Week12__ROI_win_value+=Week12PandL_list[i]
+                    } else if(Week12PandL_list[i]<0){
+                        Week12__ROI_loss_count+=1;
+                        Week12__ROI_loss_value+=Week12PandL_list[i]
+                    }
+
+                    if(Week24PandL_list[i]>0){
+                        Week24__ROI_win_count+=1;
+                        Week24__ROI_win_value+=Week24PandL_list[i]
+                    } else if(Week24PandL_list[i]<0){
+                        Week24__ROI_loss_count+=1;
+                        Week24__ROI_loss_value+=Week24PandL_list[i]
+                    }
+                    }
+
+                }             
+                
+
+            }
+                console.log("ROI: ",Week1_ROI,Week2_ROI,Week4_ROI,Week8_ROI,Week12_ROI,Week24_ROI )
+                console.log("ROI%: ",Week1_ROI_percent,Week2_ROI_percent,Week4_ROI_percent,Week8_ROI_percent,Week12_ROI_percent,Week24_ROI_percent )
+                console.log("ROI loss: ",Week1__ROI_loss_count ,  Week2__ROI_loss_count, Week4__ROI_loss_count, Week8__ROI_loss_count, Week12__ROI_loss_count, Week24__ROI_loss_count )
+                console.log("ROI: win",Week1__ROI_win_count , Week2__ROI_win_count, Week4__ROI_win_count, Week8__ROI_win_count, Week12__ROI_win_count, Week24__ROI_win_count )
+                console.log("ROI count Ratio: ",Week1__ROI_win_count/Week1__ROI_loss_count , Week2__ROI_win_count/ Week2__ROI_loss_count, Week4__ROI_win_count/Week4__ROI_loss_count, Week8__ROI_win_count/Week8__ROI_loss_count, Week12__ROI_win_count/Week12__ROI_loss_count, Week24__ROI_win_count/Week24__ROI_loss_count )
+                console.log("ROI value Ratio: ",Week1__ROI_win_value/Week1__ROI_loss_value , Week2__ROI_win_value/ Week2__ROI_loss_value, Week4__ROI_win_value/Week4__ROI_loss_value, Week8__ROI_win_value/Week8__ROI_loss_value, Week12__ROI_win_value/Week12__ROI_loss_value, Week24__ROI_win_value/Week24__ROI_loss_value )
+
+                
+                var chart1 = new CanvasJS.Chart("chartContainer1", {
+                    title:{
+                        text: "Weekly ROI $"              
+                    },
+                    data: [              
+                    {
+                        // Change type to "doughnut", "line", "splineArea", etc.
+                        type: "column",
+                        dataPoints: [
+                            { label: "Week1",  y: Week1_ROI  },
+                            { label: "Week2", y: Week2_ROI  },
+                            { label: "Week4", y: Week4_ROI  },
+                            { label: "Week8",  y: Week8_ROI  },
+                            { label: "Week12",  y: Week12_ROI  },
+                            { label: "Week24",  y: Week24_ROI  }
+                        ]
+                    }
+                    ]
+                });
+                var chart2 = new CanvasJS.Chart("chartContainer2", {
+                    title:{
+                        text: "Weekly ROI %"              
+                    },
+                    data: [              
+                    {
+                        // Change type to "doughnut", "line", "splineArea", etc.
+                        type: "column",
+                        dataPoints: [
+                            { label: "Week1",  y: Week1_ROI_percent  },
+                            { label: "Week2", y: Week2_ROI_percent  },
+                            { label: "Week4", y: Week4_ROI_percent  },
+                            { label: "Week8",  y: Week8_ROI_percent  },
+                            { label: "Week12",  y: Week12_ROI_percent  },
+                            { label: "Week24",  y: Week24_ROI_percent  }
+                        ]
+                    }
+                    ]
+                });
+                var chart3 = new CanvasJS.Chart("chartContainer3", {
+                    title:{
+                        text: "Win ROI $ vs Loss ROI $"              
+                    },
+                    data: [              
+                    {
+                        // Change type to "doughnut", "line", "splineArea", etc.
+                        type: "column",
+                        dataPoints: [
+                            { label: "Week1",  y:  Week1__ROI_win_count/ Week1__ROI_loss_count  },
+                            { label: "Week2", y:Week2__ROI_win_count/ Week2__ROI_loss_count  },
+                            { label: "Week4", y: Week4__ROI_win_count/Week4__ROI_loss_count  },
+                            { label: "Week8",  y: Week8__ROI_win_count/Week8__ROI_loss_count  },
+                            { label: "Week12",  y: Week12__ROI_win_count/Week12__ROI_loss_count  },
+                            { label: "Week24",  y: Week24__ROI_win_count/Week24__ROI_loss_count  }
+                        ]
+                    }
+                    ]
+                });
+                var chart4 = new CanvasJS.Chart("chartContainer4", {
+                    title:{
+                        text: "Win ROI % vs Loss ROI % (Sucess Ratio)"              
+                    },
+                    data: [              
+                    {
+                        // Change type to "doughnut", "line", "splineArea", etc.
+                        type: "column",
+                        dataPoints: [
+                        { label: "Week1",  y:  -1*(Week1__ROI_win_value/ Week1__ROI_loss_value)  },
+                            { label: "Week2", y:-1*Week2__ROI_win_value/ Week2__ROI_loss_value  },
+                            { label: "Week4", y: -1*Week4__ROI_win_value/Week4__ROI_loss_value  },
+                            { label: "Week8",  y:-1* Week8__ROI_win_value/Week8__ROI_loss_value  },
+                            { label: "Week12",  y: -1*Week12__ROI_win_value/Week12__ROI_loss_value  },
+                            { label: "Week24",  y: -1*Week24__ROI_win_value/Week24__ROI_loss_value  }
+                        ]
+                    }
+                    ]
+                });
+            
+                chart1.render();
+                chart2.render();
+                chart3.render();
+                chart4.render();
+            }
+        
+        function onclickfunc(){
+            code_value= document.getElementById("code").value;
+            sector_value= document.getElementById("sector").value;
+            week_value= document.getElementById("week").value;
+            document.getElementById("demo").innerHTML="sector value:"+sector_value+", week value:"+week_value+ ", code value:"+ code_value;
+        }
+        function myFunction(){            
+
+            var weeksArray=[]
+            var codesArray=["all"]
+
+            sector_value= document.getElementById("sector").value;
+            week_value= document.getElementById("week").value;
+            code_value= document.getElementById("code").value;
+
+            
+                if(sector_value=="all"&& week_value=="all"){                    
+
+
+                    // delete preexisting options
+                    dropdownLength=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLength)
+
+                    for(i = dropdownLength-1; i >= 0; i--) {
+                        document.getElementById("code").options.remove(i);                        
+                    }
+
+                    //set codes to options value in code dropdown
+
+                    for(i=0; i<codes.length;i++){
+                        var codeList = document.getElementById("code");
+                        var option = document.createElement("option");
+                        option.text = codes[i];
+                        codeList.add(option);
+                    }
+                }
+                //If Sector is not equal to all but Week value is all
+                
+                if(sector_value!="all" && week_value=="all"){
+                    // create codes array
+                    for(i=0;i<sectors_all.length;i++){
+                        if(sectors_all[i]==sector_value){
+                            if (codesArray.indexOf(codes_all[i])===-1){
+                                codesArray.push(codes_all[i]);
+                                
+
+                            }
+                            
+                        }
+                    }
+                    //delete the exis items in code  dropdown
+                    dropdownLength=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLength)
+                    
+
+                    for(i = dropdownLength-1; i >=0; i--) {
+                        document.getElementById("code").options.remove(i);                        
+                    }
+                    
+                    //update codes array items to dropdown options code  
+                    
+                    for(i=0; i<codesArray.length;i++){
+                    var codeList = document.getElementById("code");
+                    var option = document.createElement("option");
+                    option.text = codesArray[i];
+                    codeList.add(option);
+                        
+                        
+                        
+                    }
+                    
+
+                    dropdownLengthnew=document.getElementById("code").options.length;
+                    console.log("dropdownLength New Codes:",dropdownLengthnew, "SECTOR: ", sector_value)
+                    
+                }
+
+                //if sector is alll but week is not equal to all
+
+                if(sector_value == "all" && week_value!= "all"){
+                    
+                    // create code array based on chosen week value
+
+
+                    for( i=0; i<start_dates_all.length; i++){
+                        if(week_value== start_dates_all[i]+" to "+end_dates_all[i]){
+                            
+                            if(codesArray.indexOf(codes_all[i])===-1){
+                                codesArray.push(codes_all[i])
+                            }
+
+                        }
+                    }
+
+                    // delete the exisiting items in the code dropdown
+
+                    dropdownLength=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLength)
+                    for(i = dropdownLength-1; i >= 0; i--) {
+                        document.getElementById("code").options.remove(i);                        
+                    }
+
+                    // add the items in code array to the dropdown
+
+                    for(i=0; i<codesArray.length; i++){
+                        var codeList = document.getElementById("code");
+                        var option = document.createElement("option");
+                        option.text = codes[i];
+                        codeList.add(option);
+                    }
+                    dropdownLengthnew=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLengthnew)
+                }
+
+                // if both week and sector is not all
+
+                if(sector_value!="all" && week_value!="all"){
+                    //create codearray based on chosen sector and week
+                    for ( i=0;i<sectors_all.length;i++){
+                        if(sectors_all[i]==sector_value && week_value==start_dates_all[i]+ " to "+ end_dates_all[i]){
+                            if(codesArray.indexOf(codes_all[i])===-1){
+                                codesArray.push(codes_all[i])
+                            }
+                        }
+                    }
+                    console.log("Code array: ", codesArray)
+
+                    //delete existing items in dropdown
+
+                    dropdownLength=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLength)
+                    for(i = dropdownLength-1; i >= 0; i--) {
+                        document.getElementById("code").options.remove(i);                        
+                    }
+
+                    //update dropdown values based on codearray new
+                    for(i=0; i<codesArray.length; i++){
+                        var codeList = document.getElementById("code");
+                        var option = document.createElement("option");
+                        option.text = codesArray[i];
+                        codeList.add(option);
+                    }
+                    dropdownLengthnew=document.getElementById("code").options.length;
+                    console.log("dropdownLength Codes:",dropdownLengthnew)
+
+
+
+                    
+                }
+            console.log(codesArray)
+            document.getElementById("demo").innerHTML="sector value:"+sector_value+", week value:"+week_value+ ", code value:"+ code_value;
+        }
+
+        
+        
+    </script>
+    <script type="text/javascript">
+        
+        
+        </script>
+</body>
+</html>
