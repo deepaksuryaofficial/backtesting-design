@@ -19,5 +19,6 @@ from graph import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("", views.trial, name="trial")
+    path("", views.trial, name="trial"),
+    path("topstocks", views.topstocks, name="topstocks")
 ]
